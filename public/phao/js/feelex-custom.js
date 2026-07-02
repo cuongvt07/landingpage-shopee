@@ -7,13 +7,14 @@ window.LANDING_PAGE_DATA = {
         expiry: "Bảo hành 12 tháng",
         origin: "Chính hãng",
         weight: "~600 g",
-        image: "/phao/image/phao-01.jpg",
+        image: "/phao/image/phao-11.jpg",
         // Ảnh chính dạng slider (vuốt được). Thêm/bớt/đổi đường dẫn ảnh ở đây.
         images: [
+            "/phao/image/phao-11.jpg",
             "/phao/image/phao-01.jpg", "/phao/image/phao-02.jpg", "/phao/image/phao-03.jpg",
             "/phao/image/phao-04.jpg", "/phao/image/phao-05.jpg", "/phao/image/phao-06.jpg",
             "/phao/image/phao-07.jpg", "/phao/image/phao-08.jpg", "/phao/image/phao-09.jpg",
-            "/phao/image/phao-10.jpg", "/phao/image/phao-11.jpg", "/phao/image/phao-12.jpg",
+            "/phao/image/phao-10.jpg", "/phao/image/phao-12.jpg",
             "/phao/image/phao-13.jpg", "/phao/image/phao-14.jpg", "/phao/image/phao-15.jpg",
             "/phao/image/phao-16.jpg", "/phao/image/phao-17.jpg", "/phao/image/phao-18.jpg",
             "/phao/image/phao-19.jpg", "/phao/image/phao-20.jpg"
