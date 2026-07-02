@@ -886,9 +886,43 @@ function initMainSlider() {
     }
 }
 
+// Tab đầu trang (Tổng quan / Đánh giá / Mô tả / Đề xuất) -> cuộn tới đúng khối
+function setupNavTabs() {
+    const HEADER_OFFSET = 96; // trừ chiều cao thanh header dính trên cùng
+    const map = {
+        PARAGRAPH161: null,                     // Tổng quan -> lên đầu trang
+        PARAGRAPH162: '.feelex-review-panel',   // Đánh giá
+        PARAGRAPH163: '.feelex-product-detail', // Mô tả
+        PARAGRAPH164: '.feelex-deal-form'       // Đề xuất -> khu đặt mua
+    };
+
+    function scrollToSel(sel) {
+        if (!sel) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        const el = document.querySelector(sel);
+        if (!el) return;
+        const y = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }
+
+    Object.keys(map).forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            scrollToSel(map[id]);
+        }, true); // capture: chặn action mặc định của LadiPage
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     updateStaticTexts();
     initMainSlider();
+    setupNavTabs();
     disableRemovedPopupBlocks();
     setupSummaryBuyButton();
     setupDealCountdown();
