@@ -1,0 +1,19 @@
+/* Extracted from style_animation in public/phao/index.html. */
+@media (min-width: 768px) {
+
+            #PARAGRAPH19,
+            #SHAPE16 {
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+        }
+
+        @media (max-width: 767px) {
+
+            #PARAGRAPH19,
+            #SHAPE16,
+            #PARAGRAPH159 {
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+        }

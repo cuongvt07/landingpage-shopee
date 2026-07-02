@@ -1,0 +1,13 @@
+/* Extracted from style_page in public/phao/index.html. */
+body {
+            direction: ltr;
+        }
+
+        .ladi-wraper {
+            margin: 0 auto;
+            width: 420px;
+        }
+
+        body {
+            font-family: "Open Sans", sans-serif
+        }
