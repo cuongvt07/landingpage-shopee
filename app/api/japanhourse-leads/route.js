@@ -50,9 +50,20 @@ function normalizeLead(body) {
 }
 
 async function getServiceAccountKey() {
-  const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || DEFAULT_KEY_PATH;
-  const rawKey = await readFile(keyPath, 'utf8');
-  const key = JSON.parse(rawKey);
+  let key;
+
+  // 1) Ưu tiên biến môi trường (dùng cho Vercel/production — key KHÔNG nằm trong repo)
+  const keyB64 = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_B64;
+  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (keyB64) {
+    key = JSON.parse(Buffer.from(keyB64, 'base64').toString('utf8'));
+  } else if (keyJson) {
+    key = JSON.parse(keyJson);
+  } else {
+    // 2) Fallback: đọc file local (dev trên máy)
+    const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || DEFAULT_KEY_PATH;
+    key = JSON.parse(await readFile(keyPath, 'utf8'));
+  }
 
   if (!key.client_email || !key.private_key) {
     throw new Error('Google service account key is missing client_email or private_key');
