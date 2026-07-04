@@ -4,3 +4,8 @@
 *.log
 .env*.local
 .DS_Store
+
+# Google service account key — KHÔNG commit (GitHub secret scanning chặn); giữ ở local
+/config/google/
+.env
+.env.local
