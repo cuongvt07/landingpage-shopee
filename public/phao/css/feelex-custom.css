@@ -2267,3 +2267,37 @@ body {
     line-height: 1.5 !important;
     white-space: nowrap !important;
 }
+
+/* Toast thông báo gửi form (nổi, tự ẩn) */
+.phao-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 92px;
+    transform: translateX(-50%) translateY(24px);
+    z-index: 100000;
+    max-width: calc(100% - 32px);
+    padding: 13px 22px;
+    border-radius: 10px;
+    background: #168a53;
+    color: #fff;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .3s ease, transform .3s ease, visibility .3s;
+}
+
+.phao-toast--show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.phao-toast--error {
+    background: #c22323;
+}

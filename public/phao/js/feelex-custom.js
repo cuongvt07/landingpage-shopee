@@ -462,11 +462,33 @@ function isValidLead(values) {
     return Boolean(values.name && values.phone && values.address);
 }
 
+// Toast nổi (tự ẩn) — dùng cho thông báo gửi form
+function showToast(text, isError) {
+    let toast = document.getElementById('phao-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'phao-toast';
+        toast.className = 'phao-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = (isError ? '⚠️ ' : '✅ ') + text;
+    toast.classList.toggle('phao-toast--error', !!isError);
+    // reflow để animation chạy lại
+    void toast.offsetWidth;
+    toast.classList.add('phao-toast--show');
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(function () {
+        toast.classList.remove('phao-toast--show');
+    }, 4000);
+}
+
 function setDealFormMessage(form, text, isError) {
     const message = form.querySelector('.feelex-form-message');
-    if (!message) return;
-    message.textContent = text;
-    message.style.color = isError ? '#c22323' : '#168a53';
+    if (message) {
+        message.textContent = text;
+        message.style.color = isError ? '#c22323' : '#168a53';
+    }
+    if (!/đang gửi/i.test(text)) showToast(text, isError);
 }
 
 function setFormSubmitting(form, isSubmitting) {
@@ -672,9 +694,11 @@ function getPopupMessageElement() {
 
 function setPopupMessage(text, isError) {
     const message = getPopupMessageElement();
-    if (!message) return;
-    message.textContent = text;
-    message.style.color = isError ? '#c22323' : '#168a53';
+    if (message) {
+        message.textContent = text;
+        message.style.color = isError ? '#c22323' : '#168a53';
+    }
+    if (!/đang gửi/i.test(text)) showToast(text, isError);
 }
 
 function setPopupSubmitting(isSubmitting) {
