@@ -1,4 +1,4 @@
-import { createSign } from 'crypto';
+import { createSign, createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import { NextResponse } from 'next/server';
 import path from 'path';
@@ -207,6 +207,72 @@ async function ensureHeadersAndGetNextIndex(token, sheetTitle, sheetId) {
   return hasHeader ? rows.length : rows.length + 1;
 }
 
+// ===== Facebook Conversions API (server-side) =====
+const FB_PIXEL_ID = process.env.FB_PIXEL_ID || '1648734006195761';
+const FB_CAPI_TOKEN = process.env.FB_CAPI_TOKEN || '';
+const FB_GRAPH_URL = 'https://graph.facebook.com/v19.0';
+const UNIT_PRICE = 220000;
+
+function sha256(value) {
+  return createHash('sha256').update(String(value).trim().toLowerCase()).digest('hex');
+}
+
+// Chuẩn hoá SĐT VN về 84xxxxxxxxx trước khi hash (khớp Facebook)
+function normalizePhoneVN(phone) {
+  let d = String(phone || '').replace(/[^0-9]/g, '');
+  if (d.startsWith('0')) d = '84' + d.slice(1);
+  else if (!d.startsWith('84') && d.length === 9) d = '84' + d;
+  return d;
+}
+
+async function sendPurchaseToCapi(lead, meta) {
+  if (!FB_CAPI_TOKEN) return { skipped: 'FB_CAPI_TOKEN chưa cấu hình' };
+
+  const qty = parseInt(lead.quantity, 10) || 1;
+  const phoneNorm = normalizePhoneVN(lead.phone);
+  const userData = {
+    ph: [sha256(phoneNorm)],
+    external_id: [sha256(phoneNorm)]
+  };
+  if (lead.name) {
+    const parts = lead.name.trim().split(/\s+/);
+    userData.fn = [sha256(parts[parts.length - 1])];
+    userData.ln = [sha256(parts[0])];
+  }
+  if (meta.ip) userData.client_ip_address = meta.ip;
+  if (meta.ua) userData.client_user_agent = meta.ua;
+  if (meta.fbp) userData.fbp = meta.fbp;
+  if (meta.fbc) userData.fbc = meta.fbc;
+
+  const payload = {
+    data: [
+      {
+        event_name: 'Purchase',
+        event_time: Math.floor(Date.now() / 1000),
+        action_source: 'website',
+        event_source_url: meta.sourceUrl || 'https://vibecar.vn/',
+        ...(meta.eventId ? { event_id: meta.eventId } : {}),
+        user_data: userData,
+        custom_data: {
+          currency: 'VND',
+          value: qty * UNIT_PRICE,
+          content_name: 'Phao Cứu Hộ Tự Động VibeCar',
+          content_type: 'product',
+          content_ids: ['phao-cuu-ho-vibecar'],
+          contents: [{ id: 'phao-cuu-ho-vibecar', quantity: qty }],
+          num_items: qty
+        }
+      }
+    ]
+  };
+
+  const res = await fetch(
+    `${FB_GRAPH_URL}/${FB_PIXEL_ID}/events?access_token=${encodeURIComponent(FB_CAPI_TOKEN)}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+  );
+  return res.json();
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -236,11 +302,27 @@ export async function POST(request) {
       }
     );
 
+    // Gửi Purchase tới Facebook Conversions API (server-side — không bị adblock/iOS/bot chặn)
+    let capi = null;
+    try {
+      capi = await sendPurchaseToCapi(lead, {
+        eventId: typeof body.event_id === 'string' ? body.event_id : undefined,
+        fbp: typeof body.fbp === 'string' ? body.fbp : undefined,
+        fbc: typeof body.fbc === 'string' ? body.fbc : undefined,
+        ip: (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || undefined,
+        ua: request.headers.get('user-agent') || undefined,
+        sourceUrl: request.headers.get('referer') || 'https://vibecar.vn/'
+      });
+    } catch (capiError) {
+      capi = { error: capiError instanceof Error ? capiError.message : 'CAPI failed' };
+    }
+
     return NextResponse.json({
       message: 'Lead submitted',
       ok: true,
       stt: nextIndex,
-      updatedRange: result.updates?.updatedRange
+      updatedRange: result.updates?.updatedRange,
+      capi
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to submit lead';

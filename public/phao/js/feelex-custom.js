@@ -524,6 +524,22 @@ async function submitLeadToGoogleSheet(values) {
     return data;
 }
 
+// Tạo event_id để KHỬ TRÙNG LẶP giữa Pixel (client) và Conversions API (server)
+function genEventId() {
+    return 'ev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+}
+function getCookie(name) {
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? m.pop() : '';
+}
+// Gắn event_id + cookie _fbp/_fbc vào values TRƯỚC khi gửi form (server dùng để dedup & khớp khách)
+function enrichConversion(values) {
+    if (!values || typeof values !== 'object') return;
+    values.event_id = values.event_id || genEventId();
+    values.fbp = getCookie('_fbp');
+    values.fbc = getCookie('_fbc');
+}
+
 // Bắn sự kiện Purchase vào Facebook Pixel CHỈ khi khách ĐẶT HÀNG THÀNH CÔNG
 // (gọi trong nhánh success sau khi lưu đơn — KHÔNG tính người chỉ vào web hay mở form rồi bỏ)
 function trackOrderConversion(values) {
@@ -538,7 +554,7 @@ function trackOrderConversion(values) {
             content_ids: ['phao-cuu-ho-vibecar'],
             contents: [{ id: 'phao-cuu-ho-vibecar', quantity: qty }],
             num_items: qty
-        });
+        }, { eventID: (values && values.event_id) || undefined });
     } catch (e) {
         // không chặn luồng nếu pixel lỗi
     }
@@ -562,6 +578,7 @@ function setupDealForm() {
         setFormSubmitting(form, true);
 
         try {
+            enrichConversion(values);
             await submitLeadToGoogleSheet(values);
             trackOrderConversion(values);
             setDealFormMessage(form, 'Đã gửi thông tin thành công. Tư vấn viên sẽ liên hệ lại sớm.', false);
@@ -747,6 +764,7 @@ async function submitPopupOrder(event) {
     setPopupSubmitting(true);
 
     try {
+        enrichConversion(values);
         await submitLeadToGoogleSheet(values);
         trackOrderConversion(values);
         setPopupMessage('Đã gửi thông tin thành công. Tư vấn viên sẽ liên hệ lại sớm.', false);
