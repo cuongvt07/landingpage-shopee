@@ -524,6 +524,26 @@ async function submitLeadToGoogleSheet(values) {
     return data;
 }
 
+// Bắn sự kiện Purchase vào Facebook Pixel CHỈ khi khách ĐẶT HÀNG THÀNH CÔNG
+// (gọi trong nhánh success sau khi lưu đơn — KHÔNG tính người chỉ vào web hay mở form rồi bỏ)
+function trackOrderConversion(values) {
+    if (typeof window.fbq !== 'function') return;
+    const qty = parseInt(values && values.quantity, 10) || 1;
+    try {
+        window.fbq('track', 'Purchase', {
+            value: qty * 220000,
+            currency: 'VND',
+            content_name: 'Phao Cứu Hộ Tự Động VibeCar',
+            content_type: 'product',
+            content_ids: ['phao-cuu-ho-vibecar'],
+            contents: [{ id: 'phao-cuu-ho-vibecar', quantity: qty }],
+            num_items: qty
+        });
+    } catch (e) {
+        // không chặn luồng nếu pixel lỗi
+    }
+}
+
 function setupDealForm() {
     const form = document.querySelector('.feelex-order-form');
     if (!form) return;
@@ -543,6 +563,7 @@ function setupDealForm() {
 
         try {
             await submitLeadToGoogleSheet(values);
+            trackOrderConversion(values);
             setDealFormMessage(form, 'Đã gửi thông tin thành công. Tư vấn viên sẽ liên hệ lại sớm.', false);
             form.reset();
             syncDealFormToPopup();
@@ -727,6 +748,7 @@ async function submitPopupOrder(event) {
 
     try {
         await submitLeadToGoogleSheet(values);
+        trackOrderConversion(values);
         setPopupMessage('Đã gửi thông tin thành công. Tư vấn viên sẽ liên hệ lại sớm.', false);
     } catch (error) {
         setPopupMessage(error.message || 'Không thể gửi thông tin. Vui lòng thử lại.', true);
